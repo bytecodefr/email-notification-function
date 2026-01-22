@@ -83,6 +83,14 @@ const normalizeText = (value) => {
   return trimmed.length ? trimmed : null;
 };
 
+const escapeHtml = (value) =>
+  String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
 const hashPayload = (payload) =>
   crypto.createHash('sha256').update(JSON.stringify(payload)).digest('hex');
 
@@ -180,56 +188,103 @@ const buildApplicationEmail = ({
     ? `Action Required: ${applicationLabel}`
     : `Update: Your ${applicationLabel} is now ${statusLabel}`;
 
-  const lines = [];
-  lines.push(`Hello${name ? ` ${name}` : ''},`);
-  lines.push('');
-  lines.push(`There is an update to your ${applicationLabel}.`);
-  lines.push(`Reference ID: ${reference}`);
-  lines.push(`Status: ${statusLabel}`);
+  const safeName = escapeHtml(name);
+  const safeLabel = escapeHtml(applicationLabel);
+  const safeReference = escapeHtml(reference);
+  const safeStatus = escapeHtml(statusLabel);
+  const safeLink = escapeHtml(link);
 
   const noteEntries = [];
   if (needsActionNote) noteEntries.push({ label: 'Action required', value: needsActionNote });
   if (rejectionReason) noteEntries.push({ label: 'Rejection reason', value: rejectionReason });
   if (adminNotes) noteEntries.push({ label: 'Admin note', value: adminNotes });
 
-  if (noteEntries.length) {
-    lines.push('');
-    noteEntries.forEach((entry) => {
-      lines.push(`${entry.label}: ${entry.value}`);
-    });
-  }
+  const notesHtml = noteEntries.length
+    ? `<div style="margin-top:16px;">
+        <p style="margin:0 0 8px;font-weight:600;color:#111827;">Admin notes</p>
+        ${noteEntries
+          .map(
+            (entry) =>
+              `<div style="margin-bottom:10px;">
+                <div style="font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;">
+                  ${escapeHtml(entry.label)}
+                </div>
+                <div style="margin-top:4px;color:#111827;">${escapeHtml(entry.value)}</div>
+              </div>`
+          )
+          .join('')}
+      </div>`
+    : '';
 
-  if (link) {
-    lines.push('');
-    lines.push(`View your application: ${link}`);
-  }
+  const ctaHtml = link
+    ? `<a href="${safeLink}" style="display:inline-block;margin-top:18px;padding:10px 16px;background:#0f766e;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;">View your application</a>`
+    : '';
 
-  lines.push('');
-  lines.push('Thank you,');
-  lines.push('Government Portal');
+  const statusBadge = isActionRequired
+    ? `<span style="display:inline-block;padding:2px 8px;background:#fee2e2;color:#b91c1c;border-radius:999px;font-size:12px;font-weight:600;">Action required</span>`
+    : `<span style="display:inline-block;padding:2px 8px;background:#e0f2fe;color:#0369a1;border-radius:999px;font-size:12px;font-weight:600;">${safeStatus}</span>`;
 
-  return { subject, content: lines.join('\n') };
+  const content = `
+  <div style="font-family:Arial, sans-serif;background:#f9fafb;padding:24px;">
+    <div style="max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;padding:24px;">
+      <div style="border-bottom:1px solid #e5e7eb;padding-bottom:16px;margin-bottom:16px;">
+        <p style="margin:0;font-size:14px;color:#6b7280;">Government Portal</p>
+        <h1 style="margin:8px 0 0;font-size:20px;color:#111827;">${isActionRequired ? 'Action required on your application' : 'Application update'}</h1>
+      </div>
+      <p style="margin:0 0 12px;color:#111827;">Hello${safeName ? ` ${safeName}` : ''},</p>
+      <p style="margin:0 0 16px;color:#111827;">There is an update to your ${safeLabel}.</p>
+      <table style="width:100%;border-collapse:collapse;">
+        <tr>
+          <td style="padding:8px 0;color:#6b7280;font-size:13px;">Reference ID</td>
+          <td style="padding:8px 0;color:#111827;font-weight:600;text-align:right;">${safeReference}</td>
+        </tr>
+        <tr>
+          <td style="padding:8px 0;color:#6b7280;font-size:13px;">Status</td>
+          <td style="padding:8px 0;text-align:right;">${statusBadge}</td>
+        </tr>
+      </table>
+      ${notesHtml}
+      ${ctaHtml}
+      <p style="margin:20px 0 0;color:#6b7280;font-size:12px;">If you did not request this, you can ignore this email.</p>
+    </div>
+  </div>`;
+
+  return { subject, content, html: true };
 };
 
 const buildPayStubEmail = ({ employeeName, periodName, link, reference }) => {
   const subject = 'Update: Your pay stub is ready';
-  const lines = [];
-  lines.push(`Hello${employeeName ? ` ${employeeName}` : ''},`);
-  lines.push('');
-  lines.push('Your pay stub is now available.');
-  if (periodName) {
-    lines.push(`Pay period: ${periodName}`);
-  }
-  lines.push(`Reference ID: ${reference}`);
-  if (link) {
-    lines.push('');
-    lines.push(`View your pay stub: ${link}`);
-  }
-  lines.push('');
-  lines.push('Thank you,');
-  lines.push('Government Portal');
+  const safeName = escapeHtml(employeeName);
+  const safePeriod = escapeHtml(periodName);
+  const safeReference = escapeHtml(reference);
+  const safeLink = escapeHtml(link);
 
-  return { subject, content: lines.join('\n') };
+  const ctaHtml = link
+    ? `<a href="${safeLink}" style="display:inline-block;margin-top:18px;padding:10px 16px;background:#0f766e;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;">View your pay stub</a>`
+    : '';
+
+  const content = `
+  <div style="font-family:Arial, sans-serif;background:#f9fafb;padding:24px;">
+    <div style="max-width:640px;margin:0 auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;padding:24px;">
+      <div style="border-bottom:1px solid #e5e7eb;padding-bottom:16px;margin-bottom:16px;">
+        <p style="margin:0;font-size:14px;color:#6b7280;">Government Portal</p>
+        <h1 style="margin:8px 0 0;font-size:20px;color:#111827;">Your pay stub is ready</h1>
+      </div>
+      <p style="margin:0 0 12px;color:#111827;">Hello${safeName ? ` ${safeName}` : ''},</p>
+      <p style="margin:0 0 16px;color:#111827;">Your pay stub is now available.</p>
+      <table style="width:100%;border-collapse:collapse;">
+        ${periodName ? `<tr><td style="padding:8px 0;color:#6b7280;font-size:13px;">Pay period</td><td style="padding:8px 0;color:#111827;font-weight:600;text-align:right;">${safePeriod}</td></tr>` : ''}
+        <tr>
+          <td style="padding:8px 0;color:#6b7280;font-size:13px;">Reference ID</td>
+          <td style="padding:8px 0;color:#111827;font-weight:600;text-align:right;">${safeReference}</td>
+        </tr>
+      </table>
+      ${ctaHtml}
+      <p style="margin:20px 0 0;color:#6b7280;font-size:12px;">If you did not request this, you can ignore this email.</p>
+    </div>
+  </div>`;
+
+  return { subject, content, html: true };
 };
 
 const createClient = () => {
@@ -379,7 +434,7 @@ export default async ({ req, res, log, error }) => {
 
     const link = buildPortalLink(portalBaseUrl, `citizen-portal/pay-stubs/${document.$id}`);
     const reference = document.$id || document.id || 'Pay stub';
-    const { subject, content } = buildPayStubEmail({
+    const { subject, content, html } = buildPayStubEmail({
       employeeName: employee.fullName || user.name || null,
       periodName: document.periodName || null,
       link,
@@ -396,7 +451,7 @@ export default async ({ req, res, log, error }) => {
       subject,
       content,
       users: [userId],
-      html: false
+      html
     });
 
     await databases.updateDocument(databaseId, collectionId, document.$id, {
@@ -478,7 +533,7 @@ export default async ({ req, res, log, error }) => {
     `citizen-portal/applications/${document.$id}?source=${applicationConfig.source}`
   );
 
-  const { subject, content } = buildApplicationEmail({
+  const { subject, content, html } = buildApplicationEmail({
     applicationLabel,
     statusLabel,
     reference,
@@ -501,7 +556,7 @@ export default async ({ req, res, log, error }) => {
     subject,
     content,
     users: [userId],
-    html: false
+    html
   });
 
   await databases.updateDocument(databaseId, collectionId, document.$id, {
