@@ -43,6 +43,8 @@ const EMPLOYEES_COLLECTION_ID = process.env.EMPLOYEES_COLLECTION_ID || 'employee
 
 const DEFAULT_THROTTLE_MINUTES = 10;
 
+// Environment variable: NOTIFY_THROTTLE_MINUTES
+
 const parseJson = (value) => {
   if (!value) return null;
   if (typeof value === 'object') return value;
