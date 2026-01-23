@@ -393,7 +393,7 @@ const buildApplicationEmail = ({
     </table>
   </div>`;
 
-  return { subject, content, html: true };
+  return { subject, content };
 };
 
 const buildPayStubEmail = ({ employeeName, periodName, link, reference }) => {
@@ -521,7 +521,7 @@ const buildPayStubEmail = ({ employeeName, periodName, link, reference }) => {
     </table>
   </div>`;
 
-  return { subject, content, html: true };
+  return { subject, content };
 };
 
 const createClient = () => {
@@ -671,7 +671,7 @@ export default async ({ req, res, log, error }) => {
 
     const link = buildPortalLink(portalBaseUrl, `citizen-portal/pay-stubs/${document.$id}`);
     const reference = document.$id || document.id || 'Pay stub';
-    const { subject, content, html } = buildPayStubEmail({
+    const { subject, content } = buildPayStubEmail({
       employeeName: employee.fullName || user.name || null,
       periodName: document.periodName || null,
       link,
@@ -688,7 +688,7 @@ export default async ({ req, res, log, error }) => {
       subject,
       content,
       users: [userId],
-      html
+      html: true
     });
 
     await databases.updateDocument(databaseId, collectionId, document.$id, {
@@ -790,7 +790,7 @@ export default async ({ req, res, log, error }) => {
     `citizen-portal/applications/${document.$id}?source=${applicationConfig.source}`
   );
 
-  const { subject, content, html } = buildApplicationEmail({
+  const { subject, content } = buildApplicationEmail({
     applicationLabel,
     statusLabel,
     reference,
@@ -813,7 +813,7 @@ export default async ({ req, res, log, error }) => {
     subject,
     content,
     users: [userId],
-    html
+    html: true
   });
 
   // Recalculate fingerprint with fresh data for updating the document
