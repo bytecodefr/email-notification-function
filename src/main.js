@@ -203,16 +203,16 @@ const buildApplicationEmail = ({
     ? `<div style="margin-top:16px;">
         <p style="margin:0 0 8px;font-weight:600;color:#111827;">Admin notes</p>
         ${noteEntries
-          .map(
-            (entry) =>
-              `<div style="margin-bottom:10px;">
+      .map(
+        (entry) =>
+          `<div style="margin-bottom:10px;">
                 <div style="font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:#6b7280;">
                   ${escapeHtml(entry.label)}
                 </div>
                 <div style="margin-top:4px;color:#111827;">${escapeHtml(entry.value)}</div>
               </div>`
-          )
-          .join('')}
+      )
+      .join('')}
       </div>`
     : '';
 
@@ -464,24 +464,25 @@ export default async ({ req, res, log, error }) => {
     return res.json({ ok: true, sent: true, type: 'pay_stub' });
   }
 
-  const status = normalizeStatus(document.status);
-  const adminNotes = normalizeText(document.adminNotes);
-  const needsActionNote = normalizeText(document.needsActionNote);
-  const rejectionReason = normalizeText(document.rejectionReason);
-
-  const hasNotifiableStatus = NOTIFIABLE_STATUSES.has(status);
-  const hasNotes = Boolean(adminNotes || needsActionNote || rejectionReason);
+  // Check notifiable status and notes with current document state
+  const hasNotifiableStatus = NOTIFIABLE_STATUSES.has(normalizeStatus(document.status));
+  const hasNotes = Boolean(
+    normalizeText(document.adminNotes) ||
+    normalizeText(document.needsActionNote) ||
+    normalizeText(document.rejectionReason)
+  );
 
   if (!hasNotifiableStatus && !hasNotes) {
     logger(`Ignored: no meaningful change for ${collectionId}/${document.$id}.`);
     return res.json({ ok: true, ignored: 'no_meaningful_change' });
   }
 
+  // Check duplicate with current document state
   const applicationFingerprint = buildApplicationFingerprint({
-    status,
-    adminNotes,
-    needsActionNote,
-    rejectionReason
+    status: normalizeStatus(document.status),
+    adminNotes: normalizeText(document.adminNotes),
+    needsActionNote: normalizeText(document.needsActionNote),
+    rejectionReason: normalizeText(document.rejectionReason)
   });
 
   if (document.lastNotifiedHash && document.lastNotifiedHash === applicationFingerprint) {
@@ -489,11 +490,30 @@ export default async ({ req, res, log, error }) => {
     return res.json({ ok: true, ignored: 'duplicate' });
   }
 
+  // Check throttle
   const lastNotifiedAt = parseDate(document.lastNotifiedAt);
   if (lastNotifiedAt && now - lastNotifiedAt < throttleMs) {
     logger(`Ignored: throttled notification for ${collectionId}/${document.$id}.`);
     return res.json({ ok: true, ignored: 'throttled' });
   }
+
+  // Fetch fresh document to get the latest status and notes
+  if (!dryRun) {
+    try {
+      const freshDocument = await databases.getDocument(databaseId, collectionId, document.$id);
+      // Update our working document with fresh data
+      document = { ...document, ...freshDocument };
+    } catch (err) {
+      errLogger(`Failed to fetch fresh document for ${collectionId}/${document.$id}: ${err.message}`);
+      return res.json({ ok: false, error: 'fetch_failed' });
+    }
+  }
+
+  // NOW extract the values from the fresh document for email building
+  const status = normalizeStatus(document.status);
+  const adminNotes = normalizeText(document.adminNotes);
+  const needsActionNote = normalizeText(document.needsActionNote);
+  const rejectionReason = normalizeText(document.rejectionReason);
 
   const userId = document.userId;
   if (!userId) {
@@ -559,10 +579,18 @@ export default async ({ req, res, log, error }) => {
     html
   });
 
+  // Recalculate fingerprint with fresh data for updating the document
+  const freshApplicationFingerprint = buildApplicationFingerprint({
+    status,
+    adminNotes,
+    needsActionNote,
+    rejectionReason
+  });
+
   await databases.updateDocument(databaseId, collectionId, document.$id, {
     lastNotifiedAt: now.toISOString(),
     lastNotifiedType: notificationType,
-    lastNotifiedHash: applicationFingerprint
+    lastNotifiedHash: freshApplicationFingerprint
   });
 
   logger(
