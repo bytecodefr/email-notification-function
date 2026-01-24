@@ -456,11 +456,35 @@ export default async function main({ req, res, log, error: errLogger }) {
     }
     logger(`Event from header: ${req.headers?.['x-appwrite-event'] || req.headers?.['X-Appwrite-Event'] || 'none'}`);
     logger(`Events array from payload: ${JSON.stringify(payload?.events || [])}`);
+    logger(`Document $createdAt: ${payload?.$createdAt || 'none'}`);
+    logger(`Document $updatedAt: ${payload?.$updatedAt || 'none'}`);
+    logger(`Is create event: ${payload?.$createdAt === payload?.$updatedAt ? 'yes' : 'no'}`);
 
     const document = payload;
     if (!document?.$id || !document?.$collectionId || !document?.$databaseId) {
       logger('Ignored: missing document metadata.');
       return res.json({ ok: true, ignored: 'missing_metadata' });
+    }
+
+    // CRITICAL: Prevent self-triggering loop
+    // If this update only changed notification tracking fields, ignore it
+    const eventType = guessEventType(eventName, document);
+    if (eventType === 'update') {
+      // Check if only notification-related fields changed
+      const hasOnlyNotificationChanges = 
+        document.$updatedAt !== document.$createdAt && // This is an update
+        !eventName?.includes('.create') && // Not a create event
+        document.lastNotifiedAt && // Has notification data
+        document.lastNotifiedHash; // Has notification hash
+      
+      // If we just sent a notification in the last 10 seconds, this might be our own update
+      const lastNotified = parseDate(document.lastNotifiedAt);
+      const veryRecentNotification = lastNotified && (now - lastNotified) < 10000; // 10 seconds
+      
+      if (hasOnlyNotificationChanges && veryRecentNotification) {
+        logger(`Ignored: likely self-triggered update for ${document.$id} (notification sent ${Math.round((now - lastNotified) / 1000)}s ago).`);
+        return res.json({ ok: true, ignored: 'self_trigger' });
+      }
     }
 
     const collectionId = document.$collectionId;
@@ -483,7 +507,12 @@ export default async function main({ req, res, log, error: errLogger }) {
       freshDocument = await databases.getDocument(databaseId, collectionId, document.$id);
       logger(`Fetched fresh document for ${collectionId}/${document.$id}`);
     } catch (err) {
-      errLogger(`Failed to fetch fresh document for ${collectionId}/${document.$id}: ${err.message}`);
+      if (err.code === 401 || err.message?.includes('missing scopes')) {
+        errLogger(`Permission error fetching fresh document: ${err.message}`);
+        errLogger(`CRITICAL: Function API key needs 'documents.read' and 'documents.write' scopes!`);
+      } else {
+        errLogger(`Failed to fetch fresh document for ${collectionId}/${document.$id}: ${err.message}`);
+      }
       // Continue with webhook payload as fallback
       logger(`Continuing with webhook payload data for ${collectionId}/${document.$id}`);
     }
@@ -708,15 +737,27 @@ export default async function main({ req, res, log, error: errLogger }) {
       html: true
     });
 
-    await databases.updateDocument(databaseId, collectionId, freshDocument.$id, {
-      lastNotifiedAt: now.toISOString(),
-      lastNotifiedType: notificationType,
-      lastNotifiedHash: applicationFingerprint
-    });
+    logger(`Email sent: ${collectionId}/${freshDocument.$id} (${notificationType}) to ${maskEmail(user.email)}.`);
 
-    logger(
-      `Email sent: ${collectionId}/${freshDocument.$id} (${notificationType}) to ${maskEmail(user.email)}.`
-    );
+    // Update notification tracking fields (non-blocking - don't fail if this errors)
+    try {
+      await databases.updateDocument(databaseId, collectionId, freshDocument.$id, {
+        lastNotifiedAt: now.toISOString(),
+        lastNotifiedType: notificationType,
+        lastNotifiedHash: applicationFingerprint
+      });
+      logger(`Updated notification tracking for ${collectionId}/${freshDocument.$id}.`);
+    } catch (updateErr) {
+      // Log but don't fail - email was already sent successfully
+      if (updateErr.code === 401 || updateErr.message?.includes('missing scopes')) {
+        errLogger(`Permission error: Cannot update notification tracking. API key needs 'documents.write' scope!`);
+        errLogger(`Email was sent, but duplicate prevention won't work without write permissions.`);
+      } else {
+        errLogger(`Warning: Failed to update notification tracking for ${collectionId}/${freshDocument.$id}: ${updateErr.message}`);
+      }
+      logger(`Email was sent successfully despite tracking update failure.`);
+    }
+
     return res.json({ ok: true, sent: true, type: 'application' });
   } catch (err) {
     errLogger(`Unhandled error: ${err.message}`);
