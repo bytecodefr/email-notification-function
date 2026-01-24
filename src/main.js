@@ -613,16 +613,29 @@ export default async function main({ req, res, log, error: errLogger }) {
       rejectionReason
     });
 
-    if (freshDocument.lastNotifiedHash && freshDocument.lastNotifiedHash === applicationFingerprint) {
-      logger(`Ignored: duplicate notification for ${collectionId}/${freshDocument.$id}.`);
-      return res.json({ ok: true, ignored: 'duplicate' });
+    logger(`Current fingerprint: ${applicationFingerprint}`);
+    logger(`Stored fingerprint: ${freshDocument.lastNotifiedHash || 'none'}`);
+    logger(`Last notified: ${freshDocument.lastNotifiedAt || 'never'}`);
+
+    // Check throttle FIRST
+    const lastNotifiedAt = parseDate(freshDocument.lastNotifiedAt);
+    const withinThrottleWindow = lastNotifiedAt && (now - lastNotifiedAt) < throttleMs;
+    
+    if (withinThrottleWindow) {
+      const timeSinceLastNotification = Math.round((now - lastNotifiedAt) / 1000);
+      logger(`Ignored: throttled notification for ${collectionId}/${freshDocument.$id} (${timeSinceLastNotification}s ago, throttle: ${throttleMinutes}m).`);
+      return res.json({ ok: true, ignored: 'throttled' });
     }
 
-    // Check throttle
-    const lastNotifiedAt = parseDate(freshDocument.lastNotifiedAt);
-    if (lastNotifiedAt && now - lastNotifiedAt < throttleMs) {
-      logger(`Ignored: throttled notification for ${collectionId}/${freshDocument.$id}.`);
-      return res.json({ ok: true, ignored: 'throttled' });
+    // Only check for duplicate hash if we just sent a notification (within 2x throttle window)
+    // This prevents the same content from being sent multiple times in quick succession
+    // but allows re-sending after enough time has passed
+    const recentlySent = lastNotifiedAt && (now - lastNotifiedAt) < (throttleMs * 2);
+    
+    if (recentlySent && freshDocument.lastNotifiedHash && freshDocument.lastNotifiedHash === applicationFingerprint) {
+      const timeSinceLastNotification = Math.round((now - lastNotifiedAt) / 1000);
+      logger(`Ignored: duplicate notification for ${collectionId}/${freshDocument.$id} (content unchanged, sent ${timeSinceLastNotification}s ago).`);
+      return res.json({ ok: true, ignored: 'duplicate' });
     }
 
     const userId = freshDocument.userId;
