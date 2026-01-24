@@ -223,467 +223,437 @@ const buildApplicationEmail = ({
         <p style="margin:0;color:#166534;font-size:14px;line-height:1.6;">Please log in to your portal to view complete details and download any necessary documents. Further instructions are available in your application dashboard.</p>
       </div>`;
   } else if (isRejected) {
-    statusMessage = `After careful review, we regret to inform you that your ${safeLabel} has not been approved at this time. Please review the details below for more information regarding this decision.`;
+    statusMessage = `After careful review, we regret to inform you that your ${safeLabel} has not been approved at this time. Please review the details below for more information.`;
     nextSteps = `
       <div style="background:#fef2f2;border:2px solid #ef4444;padding:20px;margin:24px 0;">
-        <p style="margin:0 0 12px;font-weight:700;color:#991b1b;font-size:15px;">ADDITIONAL INFORMATION</p>
-        <p style="margin:0;color:#991b1b;font-size:14px;line-height:1.6;">If you believe this decision was made in error or if you have additional information to provide, you may contact our office or submit a new application after addressing the issues mentioned in the administrator notes.</p>
+        <p style="margin:0 0 12px;font-weight:700;color:#7f1d1d;font-size:15px;">IMPORTANT INFORMATION</p>
+        <p style="margin:0;color:#7f1d1d;font-size:14px;line-height:1.6;">If you have questions or wish to reapply, please log in to your portal or contact our support team for assistance.</p>
       </div>`;
   } else if (isInReview) {
-    statusMessage = `Your ${safeLabel} is currently under review by our office. We appreciate your patience during this process.`;
+    statusMessage = `Your ${safeLabel} is now being reviewed by our team. We will notify you once the review is complete.`;
     nextSteps = `
       <div style="background:#eff6ff;border:2px solid #3b82f6;padding:20px;margin:24px 0;">
-        <p style="margin:0 0 12px;font-weight:700;color:#1e40af;font-size:15px;">REVIEW IN PROGRESS</p>
-        <p style="margin:0;color:#1e40af;font-size:14px;line-height:1.6;">Our office is carefully reviewing your application. We will notify you once a decision has been made or if we require any additional information. Standard processing time is 5-10 business days.</p>
+        <p style="margin:0 0 12px;font-weight:700;color:#1e3a8a;font-size:15px;">WHAT'S NEXT</p>
+        <p style="margin:0;color:#1e3a8a;font-size:14px;line-height:1.6;">Our team is currently reviewing your application. You can track the status at any time by logging in to your portal.</p>
       </div>`;
   } else {
-    statusMessage = `There is an update to your ${safeLabel}. Please review the information below for details.`;
-    nextSteps = `
-      <div style="background:#f5f3ff;border:2px solid #8b5cf6;padding:20px;margin:24px 0;">
-        <p style="margin:0 0 12px;font-weight:700;color:#5b21b6;font-size:15px;">PLEASE NOTE</p>
-        <p style="margin:0;color:#5b21b6;font-size:14px;line-height:1.6;">Check your portal regularly for updates. We will send you notifications for any important changes or required actions.</p>
+    statusMessage = `Your ${safeLabel} status has been updated to ${safeStatus}.`;
+  }
+
+  // Notes sections
+  let notesSection = '';
+  if (adminNotes) {
+    notesSection += `
+      <div style="background:#f9fafb;border:1px solid #d1d5db;padding:16px;margin:16px 0;">
+        <p style="margin:0 0 8px;font-weight:700;color:#374151;font-size:14px;">Administrator Notes:</p>
+        <p style="margin:0;color:#4b5563;font-size:14px;line-height:1.6;white-space:pre-wrap;">${escapeHtml(adminNotes)}</p>
+      </div>`;
+  }
+  if (needsActionNote) {
+    notesSection += `
+      <div style="background:#fffbeb;border:1px solid #f59e0b;padding:16px;margin:16px 0;">
+        <p style="margin:0 0 8px;font-weight:700;color:#78350f;font-size:14px;">Action Required Details:</p>
+        <p style="margin:0;color:#78350f;font-size:14px;line-height:1.6;white-space:pre-wrap;">${escapeHtml(needsActionNote)}</p>
+      </div>`;
+  }
+  if (rejectionReason) {
+    notesSection += `
+      <div style="background:#fef2f2;border:1px solid #ef4444;padding:16px;margin:16px 0;">
+        <p style="margin:0 0 8px;font-weight:700;color:#7f1d1d;font-size:14px;">Reason for Status:</p>
+        <p style="margin:0;color:#7f1d1d;font-size:14px;line-height:1.6;white-space:pre-wrap;">${escapeHtml(rejectionReason)}</p>
       </div>`;
   }
 
-  const noteEntries = [];
-  if (needsActionNote) noteEntries.push({ label: 'ACTION REQUIRED', value: needsActionNote });
-  if (rejectionReason) noteEntries.push({ label: 'REASON FOR DECISION', value: rejectionReason });
-  if (adminNotes) noteEntries.push({ label: 'ADDITIONAL INFORMATION', value: adminNotes });
-
-  const notesHtml = noteEntries.length
-    ? `<div style="margin-top:24px;background:#f9fafb;padding:20px;border:1px solid #d1d5db;">
-        <p style="margin:0 0 16px;font-weight:700;color:#111827;font-size:15px;">ADMINISTRATOR NOTES</p>
-        ${noteEntries
-      .map(
-        (entry) =>
-          `<div style="margin-bottom:16px;padding-bottom:16px;border-bottom:1px solid #e5e7eb;">
-                <div style="font-size:12px;font-weight:700;letter-spacing:0.05em;color:#6b7280;margin-bottom:8px;">
-                  ${escapeHtml(entry.label)}
-                </div>
-                <div style="color:#374151;font-size:14px;line-height:1.6;">${escapeHtml(entry.value)}</div>
-              </div>`
-      )
-      .join('')}
-      </div>`
-    : '';
-
-  const ctaHtml = link
-    ? `<table role="presentation" style="margin:28px auto;border-collapse:collapse;" align="center">
-        <tr>
-          <td style="background:#0d9488;padding:14px 40px;text-align:center;border:2px solid #0d9488;">
-            <a href="${safeLink}" style="color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;letter-spacing:0.025em;">VIEW APPLICATION DETAILS</a>
-          </td>
-        </tr>
-      </table>
-      <p style="margin:12px 0 0;color:#6b7280;font-size:12px;text-align:center;line-height:1.5;">If the button above does not work, copy and paste this link into your browser:<br/><span style="color:#0d9488;word-break:break-all;">${safeLink}</span></p>`
-    : '';
-
-  const statusBadge = isActionRequired
-    ? `<span style="display:inline-block;padding:6px 14px;background:#fef3c7;color:#92400e;border:2px solid #f59e0b;font-size:13px;font-weight:700;letter-spacing:0.025em;">ACTION REQUIRED</span>`
-    : isApproved
-      ? `<span style="display:inline-block;padding:6px 14px;background:#d1fae5;color:#065f46;border:2px solid #10b981;font-size:13px;font-weight:700;letter-spacing:0.025em;">APPROVED</span>`
-      : isRejected
-        ? `<span style="display:inline-block;padding:6px 14px;background:#fee2e2;color:#991b1b;border:2px solid #ef4444;font-size:13px;font-weight:700;letter-spacing:0.025em;">NOT APPROVED</span>`
-        : isInReview
-          ? `<span style="display:inline-block;padding:6px 14px;background:#dbeafe;color:#1e40af;border:2px solid #3b82f6;font-size:13px;font-weight:700;letter-spacing:0.025em;">IN REVIEW</span>`
-          : `<span style="display:inline-block;padding:6px 14px;background:#e0f2fe;color:#075985;border:2px solid #0284c7;font-size:13px;font-weight:700;letter-spacing:0.025em;">${safeStatus.toUpperCase()}</span>`;
-
-  const currentDate = new Date().toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZoneName: 'short'
-  });
-
   const content = `
-  <div style="font-family:Arial,Helvetica,sans-serif;background:#ffffff;padding:0;margin:0;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f3f4f6;padding:40px 20px;">
-      <tr>
-        <td align="center">
-          <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff;border:2px solid #d1d5db;max-width:600px;">
-            
-            <!-- Header -->
-            <tr>
-              <td style="background:#0d9488;padding:30px 40px;text-align:center;border-bottom:4px solid #0f766e;">
-                <p style="margin:0 0 8px;font-size:13px;color:#d1fae5;letter-spacing:0.1em;font-weight:700;">GOVERNMENT PORTAL NOTIFICATION</p>
-                <h1 style="margin:0;font-size:24px;color:#ffffff;font-weight:700;letter-spacing:0.025em;">${isActionRequired ? 'ACTION REQUIRED' : isApproved ? 'APPLICATION APPROVED' : isRejected ? 'APPLICATION UPDATE' : 'STATUS UPDATE'}</h1>
-              </td>
-            </tr>
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:#f3f4f6;">
+  <div style="max-width:600px;margin:0 auto;background:#ffffff;">
+    <!-- Header -->
+    <div style="background:linear-gradient(135deg,#1e40af 0%,#3b82f6 100%);padding:32px 24px;text-align:center;">
+      <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;">Application Status Update</h1>
+    </div>
 
-            <!-- Body -->
-            <tr>
-              <td style="padding:40px;">
-                
-                <!-- Greeting -->
-                <p style="margin:0 0 8px;color:#111827;font-size:15px;font-weight:700;">Dear ${safeName ? safeName : 'Applicant'},</p>
-                
-                <!-- Status Message -->
-                <p style="margin:0 0 28px;color:#374151;font-size:14px;line-height:1.7;">${statusMessage}</p>
+    <!-- Main Content -->
+    <div style="padding:32px 24px;">
+      <p style="margin:0 0 24px;color:#111827;font-size:16px;line-height:1.6;">
+        ${safeName ? `Dear ${safeName},` : 'Dear Applicant,'}
+      </p>
 
-                <!-- Application Details -->
-                <div style="background:#f9fafb;border:2px solid #e5e7eb;padding:24px;margin-bottom:24px;">
-                  <p style="margin:0 0 20px;font-size:13px;color:#6b7280;font-weight:700;letter-spacing:0.05em;">APPLICATION DETAILS</p>
-                  
-                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
-                    <tr>
-                      <td style="padding:12px 0;color:#6b7280;font-size:14px;border-top:1px solid #e5e7eb;">Application Type:</td>
-                      <td style="padding:12px 0;color:#111827;font-weight:600;text-align:right;font-size:14px;border-top:1px solid #e5e7eb;">${safeLabel}</td>
-                    </tr>
-                    <tr>
-                      <td style="padding:12px 0;color:#6b7280;font-size:14px;border-top:1px solid #e5e7eb;">Reference Number:</td>
-                      <td style="padding:12px 0;color:#111827;font-weight:700;text-align:right;font-size:14px;font-family:Courier,monospace;border-top:1px solid #e5e7eb;">${safeReference}</td>
-                    </tr>
-                    <tr>
-                      <td style="padding:12px 0;color:#6b7280;font-size:14px;border-top:1px solid #e5e7eb;">Current Status:</td>
-                      <td style="padding:12px 0;text-align:right;border-top:1px solid #e5e7eb;">${statusBadge}</td>
-                    </tr>
-                    <tr>
-                      <td style="padding:12px 0;color:#6b7280;font-size:14px;border-top:1px solid #e5e7eb;">Last Updated:</td>
-                      <td style="padding:12px 0;color:#111827;font-weight:500;text-align:right;font-size:13px;border-top:1px solid #e5e7eb;">${currentDate}</td>
-                    </tr>
-                  </table>
-                </div>
+      <p style="margin:0 0 24px;color:#374151;font-size:15px;line-height:1.6;">
+        ${statusMessage}
+      </p>
 
-                <!-- Next Steps -->
-                ${nextSteps}
+      ${nextSteps}
 
-                <!-- Admin Notes -->
-                ${notesHtml}
+      <!-- Application Details -->
+      <div style="background:#f9fafb;border:1px solid #e5e7eb;padding:20px;margin:24px 0;">
+        <p style="margin:0 0 12px;font-weight:700;color:#111827;font-size:15px;">Application Details</p>
+        <table style="width:100%;border-collapse:collapse;">
+          <tr>
+            <td style="padding:8px 0;color:#6b7280;font-size:14px;">Type:</td>
+            <td style="padding:8px 0;color:#111827;font-size:14px;font-weight:600;">${safeLabel}</td>
+          </tr>
+          <tr>
+            <td style="padding:8px 0;color:#6b7280;font-size:14px;">Reference:</td>
+            <td style="padding:8px 0;color:#111827;font-size:14px;font-weight:600;">${safeReference}</td>
+          </tr>
+          <tr>
+            <td style="padding:8px 0;color:#6b7280;font-size:14px;">Status:</td>
+            <td style="padding:8px 0;color:#111827;font-size:14px;font-weight:600;">${safeStatus}</td>
+          </tr>
+        </table>
+      </div>
 
-                <!-- CTA Button -->
-                ${ctaHtml}
+      ${notesSection}
 
-                <!-- Help Section -->
-                <div style="margin-top:36px;padding-top:28px;border-top:2px solid #e5e7eb;">
-                  <p style="margin:0 0 12px;font-weight:700;color:#111827;font-size:14px;">NEED ASSISTANCE?</p>
-                  <p style="margin:0 0 12px;color:#4b5563;font-size:14px;line-height:1.6;">If you have questions about your application, please contact our office using the reference number provided above. You may:</p>
-                  <ul style="margin:0;padding-left:20px;color:#4b5563;font-size:14px;line-height:1.8;">
-                    <li style="margin-bottom:6px;">Visit the Help Center in your portal for frequently asked questions</li>
-                    <li style="margin-bottom:6px;">Contact support with your reference number for assistance</li>
-                    <li style="margin-bottom:6px;">Review your portal for additional resources and documentation</li>
-                  </ul>
-                </div>
+      <!-- CTA Button -->
+      <div style="text-align:center;margin:32px 0;">
+        <a href="${safeLink}" style="display:inline-block;background:#3b82f6;color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:6px;font-weight:600;font-size:15px;">View Application Details</a>
+      </div>
 
-                <!-- Security Notice -->
-                <div style="margin-top:28px;padding:18px;background:#fffbeb;border-left:4px solid #f59e0b;">
-                  <p style="margin:0;color:#78350f;font-size:12px;line-height:1.6;">
-                    <strong>SECURITY NOTICE:</strong> This email contains information about your government application. If you did not submit this application or believe you received this email in error, please contact our office immediately using the official contact information on our website.
-                  </p>
-                </div>
+      <p style="margin:24px 0 0;color:#6b7280;font-size:14px;line-height:1.6;">
+        If you have any questions or need assistance, please don't hesitate to contact our support team.
+      </p>
+    </div>
 
-              </td>
-            </tr>
-
-            <!-- Footer -->
-            <tr>
-              <td style="background:#f9fafb;padding:24px 40px;text-align:center;border-top:2px solid #e5e7eb;">
-                <p style="margin:0 0 8px;color:#6b7280;font-size:12px;line-height:1.5;">
-                  This is an automated notification from the Government Portal.<br/>
-                  Please do not reply directly to this email.
-                </p>
-                <p style="margin:0;color:#9ca3af;font-size:11px;">
-                  Copyright &copy; ${new Date().getFullYear()} Government Portal. All rights reserved.
-                </p>
-              </td>
-            </tr>
-
-          </table>
-        </td>
-      </tr>
-    </table>
-  </div>`;
+    <!-- Footer -->
+    <div style="background:#f9fafb;padding:24px;text-align:center;border-top:1px solid #e5e7eb;">
+      <p style="margin:0 0 8px;color:#6b7280;font-size:13px;">
+        This is an automated notification from the Citizen Portal.
+      </p>
+      <p style="margin:0;color:#9ca3af;font-size:12px;">
+        Please do not reply to this email.
+      </p>
+    </div>
+  </div>
+</body>
+</html>`.trim();
 
   return { subject, content };
 };
 
 const buildPayStubEmail = ({ employeeName, periodName, link, reference }) => {
-  const subject = `Pay Stub Available - Reference ${reference}`;
   const safeName = escapeHtml(employeeName);
   const safePeriod = escapeHtml(periodName);
-  const safeReference = escapeHtml(reference);
   const safeLink = escapeHtml(link);
+  const safeReference = escapeHtml(reference);
 
-  const ctaHtml = link
-    ? `<table role="presentation" style="margin:28px auto;border-collapse:collapse;" align="center">
-        <tr>
-          <td style="background:#0d9488;padding:14px 40px;text-align:center;border:2px solid #0d9488;">
-            <a href="${safeLink}" style="color:#ffffff;text-decoration:none;font-weight:700;font-size:14px;letter-spacing:0.025em;">VIEW PAY STUB</a>
-          </td>
-        </tr>
-      </table>
-      <p style="margin:12px 0 0;color:#6b7280;font-size:12px;text-align:center;line-height:1.5;">If the button above does not work, copy and paste this link into your browser:<br/><span style="color:#0d9488;word-break:break-all;">${safeLink}</span></p>`
-    : '';
-
-  const currentDate = new Date().toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    timeZoneName: 'short'
-  });
+  const subject = periodName
+    ? `New Pay Stub Available: ${periodName}`
+    : 'New Pay Stub Available';
 
   const content = `
-  <div style="font-family:Arial,Helvetica,sans-serif;background:#ffffff;padding:0;margin:0;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:#f3f4f6;padding:40px 20px;">
-      <tr>
-        <td align="center">
-          <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="background:#ffffff;border:2px solid #d1d5db;max-width:600px;">
-            
-            <!-- Header -->
-            <tr>
-              <td style="background:#0d9488;padding:30px 40px;text-align:center;border-bottom:4px solid #0f766e;">
-                <p style="margin:0 0 8px;font-size:13px;color:#d1fae5;letter-spacing:0.1em;font-weight:700;">GOVERNMENT PORTAL NOTIFICATION</p>
-                <h1 style="margin:0;font-size:24px;color:#ffffff;font-weight:700;letter-spacing:0.025em;">PAY STUB AVAILABLE</h1>
-              </td>
-            </tr>
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;background:#f3f4f6;">
+  <div style="max-width:600px;margin:0 auto;background:#ffffff;">
+    <!-- Header -->
+    <div style="background:linear-gradient(135deg,#059669 0%,#10b981 100%);padding:32px 24px;text-align:center;">
+      <h1 style="margin:0;color:#ffffff;font-size:24px;font-weight:700;">New Pay Stub Available</h1>
+    </div>
 
-            <!-- Body -->
-            <tr>
-              <td style="padding:40px;">
-                
-                <!-- Greeting -->
-                <p style="margin:0 0 8px;color:#111827;font-size:15px;font-weight:700;">Dear ${safeName ? safeName : 'Employee'},</p>
-                
-                <!-- Main Message -->
-                <p style="margin:0 0 28px;color:#374151;font-size:14px;line-height:1.7;">Your pay stub is now available for viewing and download through your employee portal. You may access it at any time using the link provided below.</p>
+    <!-- Main Content -->
+    <div style="padding:32px 24px;">
+      <p style="margin:0 0 24px;color:#111827;font-size:16px;line-height:1.6;">
+        ${safeName ? `Dear ${safeName},` : 'Dear Employee,'}
+      </p>
 
-                <!-- Pay Stub Details -->
-                <div style="background:#f9fafb;border:2px solid #e5e7eb;padding:24px;margin-bottom:24px;">
-                  <p style="margin:0 0 20px;font-size:13px;color:#6b7280;font-weight:700;letter-spacing:0.05em;">PAY STUB INFORMATION</p>
-                  
-                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
-                    ${periodName ? `<tr>
-                      <td style="padding:12px 0;color:#6b7280;font-size:14px;border-top:1px solid #e5e7eb;">Pay Period:</td>
-                      <td style="padding:12px 0;color:#111827;font-weight:600;text-align:right;font-size:14px;border-top:1px solid #e5e7eb;">${safePeriod}</td>
-                    </tr>` : ''}
-                    <tr>
-                      <td style="padding:12px 0;color:#6b7280;font-size:14px;${periodName ? 'border-top:1px solid #e5e7eb;' : ''}">Reference Number:</td>
-                      <td style="padding:12px 0;color:#111827;font-weight:700;text-align:right;font-size:14px;font-family:Courier,monospace;${periodName ? 'border-top:1px solid #e5e7eb;' : ''}">${safeReference}</td>
-                    </tr>
-                    <tr>
-                      <td style="padding:12px 0;color:#6b7280;font-size:14px;border-top:1px solid #e5e7eb;">Available Since:</td>
-                      <td style="padding:12px 0;color:#111827;font-weight:500;text-align:right;font-size:13px;border-top:1px solid #e5e7eb;">${currentDate}</td>
-                    </tr>
-                  </table>
-                </div>
+      <p style="margin:0 0 24px;color:#374151;font-size:15px;line-height:1.6;">
+        Your pay stub${safePeriod ? ` for ${safePeriod}` : ''} is now available for viewing and download in your employee portal.
+      </p>
 
-                <!-- Information Box -->
-                <div style="background:#eff6ff;border:2px solid #3b82f6;padding:20px;margin:24px 0;">
-                  <p style="margin:0 0 12px;font-weight:700;color:#1e40af;font-size:15px;">AVAILABLE ACTIONS</p>
-                  <ul style="margin:0;padding-left:20px;color:#1e40af;font-size:14px;line-height:1.8;">
-                    <li style="margin-bottom:6px;">View your detailed earnings and deductions breakdown</li>
-                    <li style="margin-bottom:6px;">Download a PDF copy for your personal records</li>
-                    <li style="margin-bottom:6px;">Access your complete pay stub history at any time</li>
-                  </ul>
-                </div>
+      <!-- Pay Stub Details -->
+      <div style="background:#f0fdf4;border:2px solid #22c55e;padding:20px;margin:24px 0;">
+        <p style="margin:0 0 12px;font-weight:700;color:#166534;font-size:15px;">Pay Stub Information</p>
+        ${safePeriod ? `<p style="margin:0;color:#166534;font-size:14px;line-height:1.6;">Period: ${safePeriod}</p>` : ''}
+        <p style="margin:${safePeriod ? '8px' : '0'} 0 0;color:#166534;font-size:14px;line-height:1.6;">Reference: ${safeReference}</p>
+      </div>
 
-                <!-- CTA Button -->
-                ${ctaHtml}
+      <!-- CTA Button -->
+      <div style="text-align:center;margin:32px 0;">
+        <a href="${safeLink}" style="display:inline-block;background:#10b981;color:#ffffff;text-decoration:none;padding:14px 32px;border-radius:6px;font-weight:600;font-size:15px;">View Pay Stub</a>
+      </div>
 
-                <!-- Help Section -->
-                <div style="margin-top:36px;padding-top:28px;border-top:2px solid #e5e7eb;">
-                  <p style="margin:0 0 12px;font-weight:700;color:#111827;font-size:14px;">NEED ASSISTANCE?</p>
-                  <p style="margin:0 0 12px;color:#4b5563;font-size:14px;line-height:1.6;">If you have questions regarding your pay stub or payroll information:</p>
-                  <ul style="margin:0;padding-left:20px;color:#4b5563;font-size:14px;line-height:1.8;">
-                    <li style="margin-bottom:6px;">Contact your Human Resources department or payroll administrator</li>
-                    <li style="margin-bottom:6px;">Visit the Employee Help Center in your portal for frequently asked questions</li>
-                    <li style="margin-bottom:6px;">Review available resources and documentation in your employee dashboard</li>
-                  </ul>
-                </div>
+      <p style="margin:24px 0 0;color:#6b7280;font-size:14px;line-height:1.6;">
+        Please log in to your portal to view detailed information and download a copy for your records.
+      </p>
+    </div>
 
-                <!-- Important Notice -->
-                <div style="margin-top:28px;padding:18px;background:#fffbeb;border-left:4px solid #f59e0b;">
-                  <p style="margin:0;color:#78350f;font-size:12px;line-height:1.6;">
-                    <strong>IMPORTANT RECORD KEEPING:</strong> Please retain copies of your pay stubs for your personal records. Pay stubs may be required for tax filing purposes, loan applications, or other official documentation. It is recommended to keep at least twelve months of pay stub records.
-                  </p>
-                </div>
-
-              </td>
-            </tr>
-
-            <!-- Footer -->
-            <tr>
-              <td style="background:#f9fafb;padding:24px 40px;text-align:center;border-top:2px solid #e5e7eb;">
-                <p style="margin:0 0 8px;color:#6b7280;font-size:12px;line-height:1.5;">
-                  This is an automated notification from the Government Portal.<br/>
-                  Please do not reply directly to this email.
-                </p>
-                <p style="margin:0;color:#9ca3af;font-size:11px;">
-                  Copyright &copy; ${new Date().getFullYear()} Government Portal. All rights reserved.
-                </p>
-              </td>
-            </tr>
-
-          </table>
-        </td>
-      </tr>
-    </table>
-  </div>`;
+    <!-- Footer -->
+    <div style="background:#f9fafb;padding:24px;text-align:center;border-top:1px solid #e5e7eb;">
+      <p style="margin:0 0 8px;color:#6b7280;font-size:13px;">
+        This is an automated notification from the Employee Portal.
+      </p>
+      <p style="margin:0;color:#9ca3af;font-size:12px;">
+        Please do not reply to this email.
+      </p>
+    </div>
+  </div>
+</body>
+</html>`.trim();
 
   return { subject, content };
 };
 
-const createClient = () => {
-  const endpoint = process.env.APPWRITE_ENDPOINT;
-  const project = process.env.APPWRITE_PROJECT_ID;
-  const apiKey = process.env.APPWRITE_API_KEY;
+export default async function main({ req, res, log, error: errLogger }) {
+  const logger = (msg) => log(`[notify] ${msg}`);
 
-  if (!endpoint || !project || !apiKey) {
-    throw new Error('Missing Appwrite configuration (APPWRITE_ENDPOINT, APPWRITE_PROJECT_ID, APPWRITE_API_KEY).');
-  }
+  try {
+    const client = new Client()
+      .setEndpoint(process.env.APPWRITE_FUNCTION_API_ENDPOINT)
+      .setProject(process.env.APPWRITE_FUNCTION_PROJECT_ID)
+      .setKey(process.env.APPWRITE_API_KEY);
 
-  const client = new Client();
-  client.setEndpoint(endpoint).setProject(project).setKey(apiKey);
-  return client;
-};
+    const databases = new Databases(client);
+    const users = new Users(client);
+    const messaging = new Messaging(client);
 
-export default async ({ req, res, log, error }) => {
-  const logger = log || console.log;
-  const errLogger = error || console.error;
-  const payload = parseJson(req.body) || {};
-  const document = payload?.payload && payload.payload.$id ? payload.payload : payload;
-  const eventName = getEventName(req, payload);
-  const eventType = guessEventType(eventName, document);
+    const databaseId = process.env.DATABASE_ID || 'main';
+    const portalBaseUrl = process.env.PORTAL_BASE_URL || '';
+    const throttleMinutes = parseInt(process.env.NOTIFY_THROTTLE_MINUTES || DEFAULT_THROTTLE_MINUTES, 10);
+    const throttleMs = throttleMinutes * 60 * 1000;
+    const dryRun = parseBoolean(process.env.DRY_RUN);
+    const enableApplications = parseBoolean(process.env.ENABLE_APPLICATION_NOTIFICATIONS ?? true);
+    const enablePayStubs = parseBoolean(process.env.ENABLE_PAY_STUB_NOTIFICATIONS ?? true);
 
-  if (!document || !document.$id) {
-    logger('Ignored: missing document payload.');
-    return res.json({ ok: true, ignored: 'missing_document' });
-  }
+    logger(
+      `Config: throttle=${throttleMinutes}m, dryRun=${dryRun}, apps=${enableApplications}, payStubs=${enablePayStubs}`
+    );
 
-  const collectionId = document.$collectionId || document.collectionId;
-  const databaseId =
-    document.$databaseId ||
-    process.env.APPWRITE_DATABASE_ID ||
-    process.env.DATABASE_ID ||
-    payload.$databaseId ||
-    payload.databaseId;
+    const payload = parseJson(req.body || req.bodyRaw);
+    if (!payload) {
+      logger('Ignored: no payload.');
+      return res.json({ ok: true, ignored: 'no_payload' });
+    }
 
-  if (!collectionId || !databaseId) {
-    logger('Ignored: missing collection or database id.');
-    return res.json({ ok: true, ignored: 'missing_collection_or_database' });
-  }
+    const eventName = getEventName(req, payload);
+    logger(`Event: ${eventName || 'unknown'}.`);
 
-  const isPayStub = collectionId === PAY_STUBS_COLLECTION_ID;
-  const applicationConfig = APPLICATION_COLLECTIONS[collectionId];
+    const document = payload;
+    if (!document?.$id || !document?.$collectionId || !document?.$databaseId) {
+      logger('Ignored: missing document metadata.');
+      return res.json({ ok: true, ignored: 'missing_metadata' });
+    }
 
-  if (!isPayStub && !applicationConfig) {
-    logger(`Ignored: collection ${collectionId} not configured for notifications.`);
-    return res.json({ ok: true, ignored: 'collection_not_supported' });
-  }
+    const collectionId = document.$collectionId;
+    const applicationConfig = APPLICATION_COLLECTIONS[collectionId];
+    const isPayStub = collectionId === PAY_STUBS_COLLECTION_ID;
 
-  if (eventType === 'delete') {
-    logger(`Ignored: delete event for ${collectionId}/${document.$id}.`);
-    return res.json({ ok: true, ignored: 'delete_event' });
-  }
+    if (!applicationConfig && !isPayStub) {
+      logger(`Ignored: unrecognized collection ${collectionId}.`);
+      return res.json({ ok: true, ignored: 'unrecognized_collection' });
+    }
 
-  if (!isPayStub && eventType !== 'update') {
-    logger(`Ignored: ${eventType} event for ${collectionId}/${document.$id}.`);
-    return res.json({ ok: true, ignored: 'non_update_event' });
-  }
+    const eventType = guessEventType(eventName, document);
+    const now = new Date();
 
-  const portalBaseUrl = process.env.PORTAL_BASE_URL;
-  if (!portalBaseUrl) {
-    errLogger('Missing PORTAL_BASE_URL.');
-    return res.json({ ok: false, error: 'missing_portal_base_url' });
-  }
-
-  const dryRun = parseBoolean(process.env.NOTIFY_DRY_RUN);
-  const throttleMinutes = Number.parseInt(process.env.NOTIFY_THROTTLE_MINUTES || '', 10) || DEFAULT_THROTTLE_MINUTES;
-  const throttleMs = throttleMinutes * 60 * 1000;
-
-  let databases = null;
-  let users = null;
-  let messaging = null;
-
-  if (!dryRun) {
-    let client;
+    // ============================================
+    // CRITICAL FIX: Fetch fresh document FIRST
+    // ============================================
+    let freshDocument = document;
     try {
-      client = createClient();
+      freshDocument = await databases.getDocument(databaseId, collectionId, document.$id);
+      logger(`Fetched fresh document for ${collectionId}/${document.$id}`);
     } catch (err) {
-      errLogger(err.message || err);
-      return res.json({ ok: false, error: 'missing_appwrite_config' });
+      errLogger(`Failed to fetch fresh document for ${collectionId}/${document.$id}: ${err.message}`);
+      // Continue with webhook payload as fallback
+      logger(`Continuing with webhook payload data for ${collectionId}/${document.$id}`);
     }
 
-    databases = new Databases(client);
-    users = new Users(client);
-    messaging = new Messaging(client);
-  }
+    // ============================================
+    // Pay stub flow
+    // ============================================
+    if (isPayStub) {
+      if (!enablePayStubs) {
+        logger(`Ignored: pay stub emails disabled for ${freshDocument.$id}.`);
+        return res.json({ ok: true, ignored: 'pay_stub_disabled' });
+      }
 
-  const now = new Date();
+      const lastNotifiedAt = parseDate(freshDocument.lastNotifiedAt);
+      if (lastNotifiedAt && now - lastNotifiedAt < throttleMs) {
+        logger(`Ignored: throttled pay stub ${freshDocument.$id}.`);
+        return res.json({ ok: true, ignored: 'throttled' });
+      }
 
-  if (isPayStub) {
-    const enablePayStubs = parseBoolean(process.env.ENABLE_PAYSTUB_EMAILS);
-    if (!enablePayStubs) {
-      logger(`Ignored: pay stub emails disabled for ${document.$id}.`);
-      return res.json({ ok: true, ignored: 'pay_stub_disabled' });
+      const payStubFingerprint = hashPayload({
+        hash: freshDocument.hash,
+        generatedAt: freshDocument.generatedAt,
+        netPay: freshDocument.netPay,
+        period: freshDocument.payPeriodId
+      });
+
+      if (freshDocument.lastNotifiedHash && freshDocument.lastNotifiedHash === payStubFingerprint) {
+        logger(`Ignored: duplicate pay stub ${freshDocument.$id}.`);
+        return res.json({ ok: true, ignored: 'duplicate' });
+      }
+
+      if (dryRun) {
+        logger(`Dry run: pay stub email for ${freshDocument.$id}.`);
+        return res.json({ ok: true, dryRun: true, type: 'pay_stub' });
+      }
+
+      let employee;
+      try {
+        employee = await databases.getDocument(databaseId, EMPLOYEES_COLLECTION_ID, freshDocument.employeeId);
+      } catch (err) {
+        errLogger(`Pay stub ignored: missing employee for ${freshDocument.$id}.`);
+        return res.json({ ok: true, ignored: 'missing_employee' });
+      }
+
+      const userId = employee?.userId;
+      if (!userId) {
+        logger(`Ignored: pay stub ${freshDocument.$id} missing employee userId.`);
+        return res.json({ ok: true, ignored: 'missing_userId' });
+      }
+
+      let user;
+      try {
+        user = await users.get(userId);
+      } catch (err) {
+        errLogger(`Pay stub ignored: user not found for ${freshDocument.$id}.`);
+        return res.json({ ok: true, ignored: 'missing_user' });
+      }
+
+      if (!user?.email) {
+        logger(`Ignored: pay stub ${freshDocument.$id} user has no email.`);
+        return res.json({ ok: true, ignored: 'missing_email' });
+      }
+
+      const link = buildPortalLink(portalBaseUrl, `citizen-portal/pay-stubs/${freshDocument.$id}`);
+      const reference = freshDocument.$id || freshDocument.id || 'Pay stub';
+      const { subject, content } = buildPayStubEmail({
+        employeeName: employee.fullName || user.name || null,
+        periodName: freshDocument.periodName || null,
+        link,
+        reference
+      });
+
+      if (dryRun) {
+        logger(`Dry run: pay stub email to ${maskEmail(user.email)} (${freshDocument.$id}).`);
+        return res.json({ ok: true, dryRun: true, type: 'pay_stub' });
+      }
+
+      await messaging.createEmail({
+        messageId: ID.unique(),
+        subject,
+        content,
+        users: [userId],
+        html: true
+      });
+
+      await databases.updateDocument(databaseId, collectionId, freshDocument.$id, {
+        lastNotifiedAt: now.toISOString(),
+        lastNotifiedType: 'pay_stub',
+        lastNotifiedHash: payStubFingerprint
+      });
+
+      logger(`Email sent: pay stub ${freshDocument.$id} to ${maskEmail(user.email)}.`);
+      return res.json({ ok: true, sent: true, type: 'pay_stub' });
     }
 
-    const lastNotifiedAt = parseDate(document.lastNotifiedAt);
-    if (lastNotifiedAt && now - lastNotifiedAt < throttleMs) {
-      logger(`Ignored: throttled pay stub ${document.$id}.`);
-      return res.json({ ok: true, ignored: 'throttled' });
+    // ============================================
+    // Application flow - NOW USING FRESH DOCUMENT
+    // ============================================
+    
+    // Extract values from fresh document for all checks and email building
+    const status = normalizeStatus(freshDocument.status);
+    const adminNotes = normalizeText(freshDocument.adminNotes);
+    const needsActionNote = normalizeText(freshDocument.needsActionNote);
+    const rejectionReason = normalizeText(freshDocument.rejectionReason);
+
+    // Check notifiable status and notes
+    const hasNotifiableStatus = NOTIFIABLE_STATUSES.has(status);
+    const hasNotes = Boolean(adminNotes || needsActionNote || rejectionReason);
+
+    if (!hasNotifiableStatus && !hasNotes) {
+      logger(`Ignored: no meaningful change for ${collectionId}/${freshDocument.$id}.`);
+      return res.json({ ok: true, ignored: 'no_meaningful_change' });
     }
 
-    const payStubFingerprint = hashPayload({
-      hash: document.hash,
-      generatedAt: document.generatedAt,
-      netPay: document.netPay,
-      period: document.payPeriodId
+    // Check duplicate - NOW USING FRESH DATA
+    const applicationFingerprint = buildApplicationFingerprint({
+      status,
+      adminNotes,
+      needsActionNote,
+      rejectionReason
     });
 
-    if (document.lastNotifiedHash && document.lastNotifiedHash === payStubFingerprint) {
-      logger(`Ignored: duplicate pay stub ${document.$id}.`);
+    if (freshDocument.lastNotifiedHash && freshDocument.lastNotifiedHash === applicationFingerprint) {
+      logger(`Ignored: duplicate notification for ${collectionId}/${freshDocument.$id}.`);
       return res.json({ ok: true, ignored: 'duplicate' });
     }
 
-    if (dryRun) {
-      logger(`Dry run: pay stub email for ${document.$id}.`);
-      return res.json({ ok: true, dryRun: true, type: 'pay_stub' });
+    // Check throttle
+    const lastNotifiedAt = parseDate(freshDocument.lastNotifiedAt);
+    if (lastNotifiedAt && now - lastNotifiedAt < throttleMs) {
+      logger(`Ignored: throttled notification for ${collectionId}/${freshDocument.$id}.`);
+      return res.json({ ok: true, ignored: 'throttled' });
     }
 
-    let employee;
-    try {
-      employee = await databases.getDocument(databaseId, EMPLOYEES_COLLECTION_ID, document.employeeId);
-    } catch (err) {
-      errLogger(`Pay stub ignored: missing employee for ${document.$id}.`);
-      return res.json({ ok: true, ignored: 'missing_employee' });
-    }
-
-    const userId = employee?.userId;
+    const userId = freshDocument.userId;
     if (!userId) {
-      logger(`Ignored: pay stub ${document.$id} missing employee userId.`);
+      logger(`Ignored: missing userId for ${collectionId}/${freshDocument.$id}.`);
       return res.json({ ok: true, ignored: 'missing_userId' });
+    }
+
+    const fallbackEmail = normalizeText(freshDocument.userEmail || freshDocument.email);
+    if (dryRun) {
+      if (!fallbackEmail) {
+        logger(`Ignored: dry run missing email for ${collectionId}/${freshDocument.$id}.`);
+        return res.json({ ok: true, ignored: 'missing_email' });
+      }
+      logger(`Dry run: application email to ${maskEmail(fallbackEmail)} (${freshDocument.$id}).`);
+      return res.json({ ok: true, dryRun: true, type: 'application' });
     }
 
     let user;
     try {
       user = await users.get(userId);
     } catch (err) {
-      errLogger(`Pay stub ignored: user not found for ${document.$id}.`);
+      errLogger(`Ignored: user not found for ${collectionId}/${freshDocument.$id}.`);
       return res.json({ ok: true, ignored: 'missing_user' });
     }
 
     if (!user?.email) {
-      logger(`Ignored: pay stub ${document.$id} user has no email.`);
+      logger(`Ignored: user has no email for ${collectionId}/${freshDocument.$id}.`);
       return res.json({ ok: true, ignored: 'missing_email' });
     }
 
-    const link = buildPortalLink(portalBaseUrl, `citizen-portal/pay-stubs/${document.$id}`);
-    const reference = document.$id || document.id || 'Pay stub';
-    const { subject, content } = buildPayStubEmail({
-      employeeName: employee.fullName || user.name || null,
-      periodName: document.periodName || null,
+    const applicationLabel = applicationConfig.label;
+    const statusLabel = STATUS_LABELS[status] || titleCase(status);
+    const reference = getReference(freshDocument);
+    const name = getApplicantName(freshDocument) || user.name || null;
+    const link = buildPortalLink(
+      portalBaseUrl,
+      `citizen-portal/applications/${freshDocument.$id}?source=${applicationConfig.source}`
+    );
+
+    const { subject, content } = buildApplicationEmail({
+      applicationLabel,
+      statusLabel,
+      reference,
+      adminNotes,
+      needsActionNote,
+      rejectionReason,
       link,
-      reference
+      name
     });
 
-    if (dryRun) {
-      logger(`Dry run: pay stub email to ${maskEmail(user.email)} (${document.$id}).`);
-      return res.json({ ok: true, dryRun: true, type: 'pay_stub' });
-    }
+    const notificationType = buildNotificationType({
+      status,
+      adminNotes,
+      needsActionNote,
+      rejectionReason
+    });
 
     await messaging.createEmail({
       messageId: ID.unique(),
@@ -693,148 +663,18 @@ export default async ({ req, res, log, error }) => {
       html: true
     });
 
-    await databases.updateDocument(databaseId, collectionId, document.$id, {
+    await databases.updateDocument(databaseId, collectionId, freshDocument.$id, {
       lastNotifiedAt: now.toISOString(),
-      lastNotifiedType: 'pay_stub',
-      lastNotifiedHash: payStubFingerprint
+      lastNotifiedType: notificationType,
+      lastNotifiedHash: applicationFingerprint
     });
 
-    logger(`Email sent: pay stub ${document.$id} to ${maskEmail(user.email)}.`);
-    return res.json({ ok: true, sent: true, type: 'pay_stub' });
-  }
-
-  // Check notifiable status and notes with current document state
-  const hasNotifiableStatus = NOTIFIABLE_STATUSES.has(normalizeStatus(document.status));
-  const hasNotes = Boolean(
-    normalizeText(document.adminNotes) ||
-    normalizeText(document.needsActionNote) ||
-    normalizeText(document.rejectionReason)
-  );
-
-  if (!hasNotifiableStatus && !hasNotes) {
-    logger(`Ignored: no meaningful change for ${collectionId}/${document.$id}.`);
-    return res.json({ ok: true, ignored: 'no_meaningful_change' });
-  }
-
-  // Check duplicate with current document state
-  const applicationFingerprint = buildApplicationFingerprint({
-    status: normalizeStatus(document.status),
-    adminNotes: normalizeText(document.adminNotes),
-    needsActionNote: normalizeText(document.needsActionNote),
-    rejectionReason: normalizeText(document.rejectionReason)
-  });
-
-  if (document.lastNotifiedHash && document.lastNotifiedHash === applicationFingerprint) {
-    logger(`Ignored: duplicate notification for ${collectionId}/${document.$id}.`);
-    return res.json({ ok: true, ignored: 'duplicate' });
-  }
-
-  // Check throttle
-  const lastNotifiedAt = parseDate(document.lastNotifiedAt);
-  if (lastNotifiedAt && now - lastNotifiedAt < throttleMs) {
-    logger(`Ignored: throttled notification for ${collectionId}/${document.$id}.`);
-    return res.json({ ok: true, ignored: 'throttled' });
-  }
-
-  // Fetch fresh document to get the latest status and notes
-  let workingDocument = document;
-  if (!dryRun) {
-    try {
-      const freshDocument = await databases.getDocument(databaseId, collectionId, document.$id);
-      // Update our working document with fresh data
-      workingDocument = { ...document, ...freshDocument };
-    } catch (err) {
-      errLogger(`Failed to fetch fresh document for ${collectionId}/${document.$id}: ${err.message}`);
-      return res.json({ ok: false, error: 'fetch_failed' });
-    }
-  }
-
-  // NOW extract the values from the fresh document for email building
-  const status = normalizeStatus(workingDocument.status);
-  const adminNotes = normalizeText(workingDocument.adminNotes);
-  const needsActionNote = normalizeText(workingDocument.needsActionNote);
-  const rejectionReason = normalizeText(workingDocument.rejectionReason);
-
-  const userId = workingDocument.userId;
-  if (!userId) {
-    logger(`Ignored: missing userId for ${collectionId}/${document.$id}.`);
-    return res.json({ ok: true, ignored: 'missing_userId' });
-  }
-
-  const fallbackEmail = normalizeText(workingDocument.userEmail || workingDocument.email);
-  if (dryRun) {
-    if (!fallbackEmail) {
-      logger(`Ignored: dry run missing email for ${collectionId}/${workingDocument.$id}.`);
-      return res.json({ ok: true, ignored: 'missing_email' });
-    }
-    logger(`Dry run: application email to ${maskEmail(fallbackEmail)} (${workingDocument.$id}).`);
-    return res.json({ ok: true, dryRun: true, type: 'application' });
-  }
-
-  let user;
-  try {
-    user = await users.get(userId);
+    logger(
+      `Email sent: ${collectionId}/${freshDocument.$id} (${notificationType}) to ${maskEmail(user.email)}.`
+    );
+    return res.json({ ok: true, sent: true, type: 'application' });
   } catch (err) {
-    errLogger(`Ignored: user not found for ${collectionId}/${workingDocument.$id}.`);
-    return res.json({ ok: true, ignored: 'missing_user' });
+    errLogger(`Unhandled error: ${err.message}`);
+    return res.json({ ok: false, error: err.message }, 500);
   }
-
-  if (!user?.email) {
-    logger(`Ignored: user has no email for ${collectionId}/${workingDocument.$id}.`);
-    return res.json({ ok: true, ignored: 'missing_email' });
-  }
-
-  const applicationLabel = applicationConfig.label;
-  const statusLabel = STATUS_LABELS[status] || titleCase(status);
-  const reference = getReference(workingDocument);
-  const name = getApplicantName(workingDocument) || user.name || null;
-  const link = buildPortalLink(
-    portalBaseUrl,
-    `citizen-portal/applications/${workingDocument.$id}?source=${applicationConfig.source}`
-  );
-
-  const { subject, content } = buildApplicationEmail({
-    applicationLabel,
-    statusLabel,
-    reference,
-    adminNotes,
-    needsActionNote,
-    rejectionReason,
-    link,
-    name
-  });
-
-  const notificationType = buildNotificationType({
-    status,
-    adminNotes,
-    needsActionNote,
-    rejectionReason
-  });
-
-  await messaging.createEmail({
-    messageId: ID.unique(),
-    subject,
-    content,
-    users: [userId],
-    html: true
-  });
-
-  // Recalculate fingerprint with fresh data for updating the document
-  const freshApplicationFingerprint = buildApplicationFingerprint({
-    status,
-    adminNotes,
-    needsActionNote,
-    rejectionReason
-  });
-
-  await databases.updateDocument(databaseId, collectionId, workingDocument.$id, {
-    lastNotifiedAt: now.toISOString(),
-    lastNotifiedType: notificationType,
-    lastNotifiedHash: freshApplicationFingerprint
-  });
-
-  logger(
-    `Email sent: ${collectionId}/${workingDocument.$id} (${notificationType}) to ${maskEmail(user.email)}.`
-  );
-  return res.json({ ok: true, sent: true, type: 'application' });
 };
