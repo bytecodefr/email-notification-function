@@ -240,8 +240,10 @@ const buildApplicationEmail = ({
     statusMessage = `Your ${safeLabel} status has been updated to ${safeStatus}.`;
   }
 
-  // Notes sections
+  // Notes sections - ONLY SHOW NOTES RELEVANT TO CURRENT STATUS
   let notesSection = '';
+  
+  // Show adminNotes for ALL statuses (if present)
   if (adminNotes) {
     notesSection += `
       <div style="background:#f9fafb;border:1px solid #d1d5db;padding:16px;margin:16px 0;">
@@ -249,14 +251,18 @@ const buildApplicationEmail = ({
         <p style="margin:0;color:#4b5563;font-size:14px;line-height:1.6;white-space:pre-wrap;">${escapeHtml(adminNotes)}</p>
       </div>`;
   }
-  if (needsActionNote) {
+  
+  // Show needsActionNote ONLY for needs_action status
+  if (isActionRequired && needsActionNote) {
     notesSection += `
       <div style="background:#fffbeb;border:1px solid #f59e0b;padding:16px;margin:16px 0;">
         <p style="margin:0 0 8px;font-weight:700;color:#78350f;font-size:14px;">Action Required Details:</p>
         <p style="margin:0;color:#78350f;font-size:14px;line-height:1.6;white-space:pre-wrap;">${escapeHtml(needsActionNote)}</p>
       </div>`;
   }
-  if (rejectionReason) {
+  
+  // Show rejectionReason ONLY for rejected status
+  if (isRejected && rejectionReason) {
     notesSection += `
       <div style="background:#fef2f2;border:1px solid #ef4444;padding:16px;margin:16px 0;">
         <p style="margin:0 0 8px;font-weight:700;color:#7f1d1d;font-size:14px;">Reason for Status:</p>
