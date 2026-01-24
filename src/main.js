@@ -446,6 +446,7 @@ export default async function main({ req, res, log, error: errLogger }) {
       return res.json({ ok: true, ignored: 'no_payload' });
     }
 
+    const now = new Date();
     const eventName = getEventName(req, payload);
     logger(`Event: ${eventName || 'unknown'}.`);
     
@@ -495,9 +496,6 @@ export default async function main({ req, res, log, error: errLogger }) {
       logger(`Ignored: unrecognized collection ${collectionId}.`);
       return res.json({ ok: true, ignored: 'unrecognized_collection' });
     }
-
-    const eventType = guessEventType(eventName, document);
-    const now = new Date();
 
     // ============================================
     // CRITICAL FIX: Fetch fresh document FIRST
