@@ -185,7 +185,7 @@ const buildApplicationEmail = ({
   link,
   name
 }) => {
-  const isActionRequired = statusLabel === STATUS_LABELS.needs_action || Boolean(needsActionNote);
+  const isActionRequired = statusLabel === STATUS_LABELS.needs_action;
   const isApproved = statusLabel === STATUS_LABELS.approved;
   const isRejected = statusLabel === STATUS_LABELS.rejected;
   const isInReview = statusLabel === STATUS_LABELS.in_review;
@@ -204,11 +204,11 @@ const buildApplicationEmail = ({
   const safeStatus = escapeHtml(statusLabel);
   const safeLink = escapeHtml(link);
 
-  // Status-specific messaging
+  // Status-specific messaging - STATUS TAKES PRECEDENCE
   let statusMessage = '';
   let nextSteps = '';
 
-  if (isActionRequired || needsActionNote) {
+  if (isActionRequired) {
     statusMessage = `We require additional information or action from you to continue processing your ${safeLabel}. Please review the details below and take the necessary steps at your earliest convenience to avoid delays in processing.`;
     nextSteps = `
       <div style="background:#fffbeb;border:2px solid #f59e0b;padding:20px;margin:24px 0;">
@@ -406,6 +406,11 @@ const buildPayStubEmail = ({ employeeName, periodName, link, reference }) => {
 
 export default async function main({ req, res, log, error: errLogger }) {
   const logger = (msg) => log(`[notify] ${msg}`);
+  
+  // DEBUG: Log function execution details
+  const executionId = process.env.APPWRITE_FUNCTION_EXECUTION_ID || 'unknown';
+  const timestamp = new Date().toISOString();
+  logger(`=== EXECUTION START === ID: ${executionId} | Time: ${timestamp}`);
 
   try {
     const client = new Client()
@@ -437,6 +442,14 @@ export default async function main({ req, res, log, error: errLogger }) {
 
     const eventName = getEventName(req, payload);
     logger(`Event: ${eventName || 'unknown'}.`);
+    
+    // DEBUG: Log all headers to see if there are duplicate triggers
+    const allEvents = req.headers?.['x-appwrite-events'] || req.headers?.['X-Appwrite-Events'];
+    if (allEvents) {
+      logger(`All Events Header: ${allEvents}`);
+    }
+    logger(`Event from header: ${req.headers?.['x-appwrite-event'] || req.headers?.['X-Appwrite-Event'] || 'none'}`);
+    logger(`Events array from payload: ${JSON.stringify(payload?.events || [])}`);
 
     const document = payload;
     if (!document?.$id || !document?.$collectionId || !document?.$databaseId) {
@@ -467,6 +480,19 @@ export default async function main({ req, res, log, error: errLogger }) {
       errLogger(`Failed to fetch fresh document for ${collectionId}/${document.$id}: ${err.message}`);
       // Continue with webhook payload as fallback
       logger(`Continuing with webhook payload data for ${collectionId}/${document.$id}`);
+    }
+
+    // ============================================
+    // ATOMIC LOCK: Prevent race conditions
+    // ============================================
+    // Use a processing flag to prevent concurrent executions
+    const processingKey = `processing_${collectionId}_${document.$id}_${Date.now()}`;
+    const isCurrentlyProcessing = freshDocument.lastNotifiedAt && 
+                                   (now - parseDate(freshDocument.lastNotifiedAt)) < 5000; // 5 seconds
+    
+    if (isCurrentlyProcessing) {
+      logger(`Ignored: document ${collectionId}/${document.$id} is currently being processed by another execution.`);
+      return res.json({ ok: true, ignored: 'concurrent_execution' });
     }
 
     // ============================================
