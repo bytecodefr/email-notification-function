@@ -417,7 +417,7 @@ export default async function main({ req, res, log, error: errLogger }) {
     const users = new Users(client);
     const messaging = new Messaging(client);
 
-    const databaseId = process.env.DATABASE_ID || 'main';
+    const databaseId = process.env.APPWRITE_DATABASE_ID || process.env.DATABASE_ID || 'main';
     const portalBaseUrl = process.env.PORTAL_BASE_URL || '';
     const throttleMinutes = parseInt(process.env.NOTIFY_THROTTLE_MINUTES || DEFAULT_THROTTLE_MINUTES, 10);
     const throttleMs = throttleMinutes * 60 * 1000;
